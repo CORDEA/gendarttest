@@ -11,6 +11,9 @@ void main(List<String> arguments) {
 Future<void> _run() async {
   final files = await _findAddedFiles();
   final classes = await Future.wait(files.map((e) => _findClasses(e)));
+  classes.expand((e) => e).forEach((element) {
+    _generateTestFile(element);
+  });
 }
 
 Future<Iterable<String>> _findAddedFiles() async {
@@ -33,6 +36,24 @@ Future<Iterable<_Declaration>> _findClasses(String path) async {
       .whereType<ClassDeclaration>()
       .where((element) => !element.isAbstract)
       .map((e) => _Declaration(path, e));
+}
+
+void _generateTestFile(_Declaration declaration) {
+  final testFileName = '${_flattenFileName(declaration.name)}_test.dart';
+}
+
+String _flattenFileName(String name) {
+  return List.generate(name.length, (index) => index).fold(
+    '',
+    (previousValue, i) {
+      final s = name[i].toString();
+      final lowerS = s.toLowerCase();
+      if (i > 0 && s != lowerS) {
+        return '${previousValue}_$lowerS';
+      }
+      return '$previousValue$lowerS';
+    },
+  );
 }
 
 class _Declaration {
