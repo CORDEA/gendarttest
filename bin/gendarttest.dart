@@ -11,9 +11,9 @@ void main(List<String> arguments) {
 Future<void> _run() async {
   final files = await _findAddedFiles();
   final classes = await Future.wait(files.map((e) => _findClasses(e)));
-  classes.expand((e) => e).forEach((element) {
-    _generateTestFile(element);
-  });
+  await Future.wait(
+    classes.expand((e) => e).map((e) => _generateTestFile(e)),
+  );
 }
 
 Future<Iterable<String>> _findAddedFiles() async {
@@ -38,8 +38,17 @@ Future<Iterable<_Declaration>> _findClasses(String path) async {
       .map((e) => _Declaration(path, e));
 }
 
-void _generateTestFile(_Declaration declaration) {
+Future<void> _generateTestFile(_Declaration declaration) async {
   final testFileName = '${_flattenFileName(declaration.name)}_test.dart';
+  final path = File.fromUri(Uri(
+    pathSegments: ['test'] +
+        declaration.directory.uri.pathSegments.sublist(1) +
+        [testFileName],
+  ));
+  if (await path.exists()) {
+    return;
+  }
+  await path.create(recursive: true);
 }
 
 String _flattenFileName(String name) {
@@ -62,7 +71,7 @@ class _Declaration {
   final String _path;
   final ClassDeclaration _declaration;
 
-  String get package => File(_path).parent.path;
+  Directory get directory => File(_path).parent;
 
   String get name => _declaration.name.name;
 }
