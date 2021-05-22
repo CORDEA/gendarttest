@@ -48,7 +48,9 @@ Future<void> _generateTestFile(_Declaration declaration) async {
   if (await path.exists()) {
     return;
   }
-  await path.create(recursive: true);
+  final result = await path.create(recursive: true);
+  final template = await _loadTemplate();
+  await result.writeAsString(template);
 }
 
 String _flattenFileName(String name) {
@@ -63,6 +65,17 @@ String _flattenFileName(String name) {
       return '$previousValue$lowerS';
     },
   );
+}
+
+Future<String> _loadTemplate() {
+  final path = Platform.script.pathSegments;
+  final template = File.fromUri(
+    Uri(
+      // First element is required to make it as absolute uri.
+      pathSegments: [''] + path.sublist(0, path.length - 1) + ['template.dart'],
+    ),
+  );
+  return template.readAsString();
 }
 
 class _Declaration {
